@@ -3,6 +3,10 @@ import logging
 import sys
 from gpiozero import LED, Button
 from signal import pause
+import sounddevice as sd
+import soundfile as sf
+import time
+import numpy as np
 
 button = Button(4)
 
@@ -26,34 +30,58 @@ logger = setup_custom_logger('scannerApp')
 
 print("\n\n\nStarting Scanner Application............\n")
 
+audioFileLocation = "./AudioFile/{}.wav"
+dataFileName = "./results/{}cm/{}_Degree/B1.csv"
 
-distance = 0
 measuredPower = -41
+distanceList = ['3to0', '0to3']
+orientationList = [0, 90, 180, 270]
 
 
 def startScanning():
-  ## CONFIGURATIONS ###############
-  deviceComPort = 17  # Write Com Port Number here
-  addressFilter = "50:32:5F:D7:1B:7A"
   ################################
   print("Starting Scan")
   mySniffer = serial.Serial("/dev/ttyACM0", 9600)
-  distance = 0
+  calculatedDistance = 0
   measuredPower = -41
-  scanCount = 100
-  mySniffer.readline()
-  mySniffer.readline()
-  mySniffer.readline()
-  while scanCount > 0:
-    data = mySniffer.readline().decode('utf-8').strip('\r\n')
-    temp = data.split()
-    address = temp[3]
-    rssi = temp[6]
-    intRssi = int(rssi)
-    factor = (measuredPower - intRssi) / 42
-    distance = 10**(factor)
-    logger.debug("MAC: {} | RSSI: {} | Distance: {}".format(address, rssi, distance))
-    scanCount -= 1
+  scanCount = 40
+  rssiArray = []
+  for distance in distanceList:
+    for orientation in orientationList:
+      mySniffer.readline()
+      mySniffer.readline()
+      mySniffer.readline()
+      data, fs = sf.read(audioFileLocation.format("started"))
+      sd.play(data, fs)
+      status = sd.wait()  # Wait until file is done playing
+      time.sleep(0.5)
+      while scanCount > 0:
+        data = mySniffer.readline().decode('utf-8').strip('\r\n')
+        temp = data.split()
+        address = temp[3]
+        rssi = temp[6]
+        intRssi = int(rssi)
+        rssiArray.append(intRssi)
+        factor = (measuredPower - intRssi) / 42
+        calculatedDistance = 10**(factor)
+        logger.debug("Count: {} | MAC: {} | RSSI: {} | Distance: {}".format(
+            40-scanCount, address, rssi, calculatedDistance))
+        scanCount -= 1
+      np.savetxt(dataFileName.format(distance, orientation),
+                 np.array(rssiArray), fmt='%d', header='rssi')
+      data, fs = sf.read(audioFileLocation.format(str(orientation) + "_Degree"))
+      sd.play(data, fs)
+      status = sd.wait()  # Wait until file is done playing
+      data, fs = sf.read(audioFileLocation.format("5"))
+      sd.play(data, fs)
+      status = sd.wait()  # Wait until file is done playing
+      time.sleep(5)
+      data, fs = sf.read(audioFileLocation.format("2"))
+      sd.play(data, fs)
+      status = sd.wait()  # Wait until file is done playing
+      time.sleep(1)
+      scanCount = 40
+      rssiArray = []
 
 
 button.when_pressed = startScanning
