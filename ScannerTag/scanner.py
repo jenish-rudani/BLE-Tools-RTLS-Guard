@@ -44,10 +44,10 @@ def startScanning():
   mySniffer = serial.Serial("/dev/ttyACM0", 9600)
   calculatedDistance = 0
   measuredPower = -41
-  scanCount = 40
-  rssiArray = []
   for distance in distanceList:
     for orientation in orientationList:
+      scanCount = 40
+      rssiArray = []
       mySniffer.readline()
       mySniffer.readline()
       mySniffer.readline()
@@ -68,20 +68,18 @@ def startScanning():
             40-scanCount, address, rssi, calculatedDistance))
         scanCount -= 1
       np.savetxt(dataFileName.format(distance, orientation),
-                 np.array(rssiArray), fmt='%d', header='rssi')
+                 np.array(rssiArray), fmt='%i', header='rssi')
       data, fs = sf.read(audioFileLocation.format(str(orientation) + "_Degree"))
       sd.play(data, fs)
       status = sd.wait()  # Wait until file is done playing
       data, fs = sf.read(audioFileLocation.format("5"))
       sd.play(data, fs)
       status = sd.wait()  # Wait until file is done playing
-      time.sleep(5)
+      time.sleep(8)
       data, fs = sf.read(audioFileLocation.format("2"))
       sd.play(data, fs)
       status = sd.wait()  # Wait until file is done playing
       time.sleep(1)
-      scanCount = 40
-      rssiArray = []
 
 
 button.when_pressed = startScanning
