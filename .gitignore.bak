@@ -1,0 +1,28 @@
+# Ignore everything
+*
+
+# But not these files...
+!*.pintool
+!create_bl_files.bat
+!create_bl_files.sh
+!*.slcp
+!*.slps
+!*.h
+!*.c
+!ADV-ServiceData-FW
+!BLE_RSSI_Data_Analysis
+!ExplorerKit_Sniffer
+!Siliconlab_BLE_Sniffer
+!SiliconLab-Scanner-FW
+!UT3-ScannerTag
+
+**/GNU ARM v10.2.1 - Debug
+**/.uceditor
+**/.settings
+**/.pdm
+# etc...
+
+# ...even if they are in subdirectories
+!*/
+
+# if the files to be tracked are in subdirectories
