@@ -44,9 +44,8 @@ static uint8_t advertising_set_handle = 0xff;
 #define TIMEOUT 32768
 #define MEASURED_POWER -41 // dBm
 
-
 //Code executed when the timer expire.
-void start_scanning ( sl_sleeptimer_timer_handle_t *handle, void *data ) {
+void start_scanning (sl_sleeptimer_timer_handle_t *handle, void *data) {
 
   (void) (data);
   (void) (handle);
@@ -58,7 +57,7 @@ void start_scanning ( sl_sleeptimer_timer_handle_t *handle, void *data ) {
   app_assert(sc == SL_STATUS_OK, "[E: 0x%04x] Failed to set scanner mode \n", (int ) sc);
 
   // set scan timing
-  sc = sl_bt_scanner_set_timing (gap_1m_phy, 200, 200);
+  sc = sl_bt_scanner_set_timing (gap_1m_phy, 496, 176);
   app_assert(sc == SL_STATUS_OK, "[E: 0x%04x] Failed to set scanner timming  \n", (int ) sc);
 
   // start scanning
@@ -74,7 +73,7 @@ void startScanner () {
   sl_sleeptimer_timer_handle_t my_timer;
 
   status = sl_sleeptimer_init ();
-  if ( status != SL_STATUS_OK ) {
+  if (status != SL_STATUS_OK) {
 
     app_log_error("Sleep Timer Init FAILED Status : %d\r\n", status);
 
@@ -93,8 +92,7 @@ void startScanner () {
 /**************************************************************************//**
  * Application Init.
  *****************************************************************************/
-SL_WEAK void app_init ( void )
-{
+SL_WEAK void app_init (void) {
 
   /////////////////////////////////////////////////////////////////////////////
   // Put your additional application init code here!                         //
@@ -106,8 +104,7 @@ SL_WEAK void app_init ( void )
 /**************************************************************************//**
  * Application Process Action.
  *****************************************************************************/
-SL_WEAK void app_process_action ( void )
-{
+SL_WEAK void app_process_action (void) {
 /////////////////////////////////////////////////////////////////////////////
 // Put your additional application code here!                              //
 // This is called infinitely.                                              //
@@ -121,8 +118,7 @@ SL_WEAK void app_process_action ( void )
  *
  * @param[in] evt Event coming from the Bluetooth stack.
  *****************************************************************************/
-void sl_bt_on_event ( sl_bt_msg_t *evt )
-{
+void sl_bt_on_event (sl_bt_msg_t *evt) {
   sl_status_t sc;
   bd_addr address;
   uint8_t address_type;
@@ -136,14 +132,15 @@ void sl_bt_on_event ( sl_bt_msg_t *evt )
   uint16_t dec_part = 0;
   int temp = 0;
 
-  switch ( SL_BT_MSG_ID(evt->header) ) {
+  switch (SL_BT_MSG_ID(evt->header))
+  {
     // -------------------------------
     // This event indicates the device has started and the radio is ready.
     // Do not call any stack command before receiving this boot event!
     case sl_bt_evt_system_boot_id:
 
       // Extract unique ID from BT Address.
-      sc = sl_bt_system_get_identity_address (&address,&address_type);
+      sc = sl_bt_system_get_identity_address (&address, &address_type);
 
       // Pad and reverse unique ID to get System ID.
       system_id[0] = address.addr[5];
@@ -155,7 +152,7 @@ void sl_bt_on_event ( sl_bt_msg_t *evt )
       system_id[6] = address.addr[1];
       system_id[7] = address.addr[0];
 
-      sc = sl_bt_gatt_server_write_attribute_value (gattdb_system_id,0,sizeof(system_id),system_id);
+      sc = sl_bt_gatt_server_write_attribute_value (gattdb_system_id, 0, sizeof(system_id), system_id);
 
       // Create an advertising set.
       sc = sl_bt_advertiser_create_set (&advertising_set_handle);
@@ -188,20 +185,21 @@ void sl_bt_on_event ( sl_bt_msg_t *evt )
       uint32_t temp = (remote_address->addr[3] << 24) | (remote_address->addr[2] << 16) | (remote_address->addr[1] << 8)
           | remote_address->addr[0];
 
-      if ( !(temp ^ 0xb6029174) | !(temp ^ 0x14f461da) ) {
+//      uint32_t SB1 = 0xb6029174;
+//      uint32_t SB2 = 0x14f461da;
+        uint32_t SB1 = 0x14f461da;
+        uint32_t SB2 = 0x14f4638b;
+        uint32_t HolyIOT1 = 0xfd190c68;
 
-        app_log("advertisement/scan response from %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
-                remote_address->addr[5],
-                remote_address->addr[4],
-                remote_address->addr[3],
-                remote_address->addr[2],
-                remote_address->addr[1],
+      if (!(temp ^ SB1) | !(temp ^ SB2) | !(temp ^HolyIOT1)) {
+
+        app_log("advertisement/scan response from %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", remote_address->addr[5],
+                remote_address->addr[4], remote_address->addr[3], remote_address->addr[2], remote_address->addr[1],
                 remote_address->addr[0]);
 
         rssi = evt->data.evt_scanner_scan_report.rssi;
 
-        app_log(" | RSSI: %d",
-                rssi);
+        app_log(" | RSSI: %d", rssi);
 //        power = (-41 - rssi);
 //        measuredDistane = pow (10.0,
 //                               power);
@@ -222,9 +220,7 @@ void sl_bt_on_event ( sl_bt_msg_t *evt )
       // This event indicates that a connection was closed.
     case sl_bt_evt_connection_closed_id:
       // Restart advertising after client has disconnected.
-      sc = sl_bt_advertiser_start (
-                                   advertising_set_handle,
-                                   sl_bt_advertiser_general_discoverable,
+      sc = sl_bt_advertiser_start (advertising_set_handle, sl_bt_advertiser_general_discoverable,
                                    sl_bt_advertiser_connectable_scannable);
       app_assert_status(sc);
       break;
