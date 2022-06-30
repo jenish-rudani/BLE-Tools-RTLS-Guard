@@ -91,11 +91,11 @@ void advConstructor ( uint8_t handle )
 {
   sl_status_t sc;
   const uint8_t flag_data = 0x6;
-  const uint8_t local_name_data[] = "UT-3";
+  const uint8_t local_name_data[] = "SB-2";
 
   uint16_t companySIGMemberId = 0xFCE6; // 0xFCE6 - GuardRFUD's Service Member ID
   uint16_t tempServiceData = 0x2222;
-  uint8_t serviceData[sizeof("UT-3") + 1];
+  uint8_t serviceData[sizeof("12345") + 1];
   memcpy (serviceData, (uint8_t*) &companySIGMemberId, 2);
   memcpy (serviceData + 2, (uint8_t*) &tempServiceData, 2);
   app_log("%d", sizeof(serviceData));
